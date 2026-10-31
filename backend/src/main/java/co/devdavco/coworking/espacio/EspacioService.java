@@ -25,6 +25,13 @@ public class EspacioService {
                 .toList();
     }
 
+    /** Activos e inactivos; solo para el ADMIN. */
+    public List<EspacioResponse> listarTodos() {
+        return espacios.findAllByOrderByNombreAsc().stream()
+                .map(EspacioResponse::desde)
+                .toList();
+    }
+
     public EspacioResponse obtener(Long id) {
         return EspacioResponse.desde(buscarActivo(id));
     }

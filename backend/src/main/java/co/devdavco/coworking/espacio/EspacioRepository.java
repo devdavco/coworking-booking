@@ -9,6 +9,8 @@ public interface EspacioRepository extends JpaRepository<Espacio, Long> {
 
     List<Espacio> findAllByActivoTrueOrderByNombreAsc();
 
+    List<Espacio> findAllByOrderByNombreAsc();
+
     Optional<Espacio> findByIdAndActivoTrue(Long id);
 
     Optional<Espacio> findByNombreIgnoreCase(String nombre);

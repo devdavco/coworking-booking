@@ -33,6 +33,12 @@ public class EspacioController {
         return espacioService.listarActivos();
     }
 
+    /** Solo ADMIN (ver SecurityConfig). */
+    @GetMapping("/todos")
+    public List<EspacioResponse> listarTodos() {
+        return espacioService.listarTodos();
+    }
+
     @GetMapping("/{id}")
     public EspacioResponse obtener(@PathVariable Long id) {
         return espacioService.obtener(id);

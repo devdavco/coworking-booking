@@ -109,6 +109,36 @@ class EspacioControllerTest extends IntegrationTest {
     }
 
     @Test
+    void elAdminVeTodosLosEspaciosIncluidosLosInactivos() throws Exception {
+        crearEspacio(SALA_ANDES);
+        long cabina = crearEspacio(CABINA);
+        mvc.perform(delete("/api/espacios/{id}", cabina).header(AUTHORIZATION, admin))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/espacios/todos").header(AUTHORIZATION, admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].nombre").value("Cabina 1"))
+                .andExpect(jsonPath("$[0].activo").value(false))
+                .andExpect(jsonPath("$[1].activo").value(true));
+    }
+
+    @Test
+    void unUsuarioNoPuedeVerTodosLosEspacios() throws Exception {
+        mvc.perform(get("/api/espacios/todos").header(AUTHORIZATION, tokenUsuario()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void laListaNormalIncluyeElCampoActivo() throws Exception {
+        crearEspacio(SALA_ANDES);
+
+        mvc.perform(get("/api/espacios").header(AUTHORIZATION, admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].activo").value(true));
+    }
+
+    @Test
     void obtenerUnEspacioInexistenteDevuelve404() throws Exception {
         mvc.perform(get("/api/espacios/{id}", 999).header(AUTHORIZATION, admin))
                 .andExpect(status().isNotFound())

@@ -120,6 +120,7 @@ Prefijo `/api`. Formato JSON. Documentación en `/swagger-ui.html` (solo perfil 
 | `GET /usuarios/me` | autenticado | Datos del usuario actual | 200 |
 | `GET /usuarios` | ADMIN | Lista de usuarios | 200 |
 | `GET /espacios` | autenticado | Espacios activos | 200 |
+| `GET /espacios/todos` | ADMIN | Todos los espacios, activos e inactivos, ordenados por nombre | 200 |
 | `GET /espacios/{id}` | autenticado | Detalle de un espacio activo | 200 |
 | `GET /espacios/{id}/ocupacion?fecha=YYYY-MM-DD` | autenticado | Franjas `[horaInicio, horaFinTotal)` ocupadas por reservas CONFIRMADAS ese día | 200 |
 | `POST /espacios` | ADMIN | Crea un espacio | 201 |
@@ -132,7 +133,7 @@ Prefijo `/api`. Formato JSON. Documentación en `/swagger-ui.html` (solo perfil 
 | `GET /reservas/{id}` | dueño o ADMIN | Detalle | 200 |
 | `POST /reservas/{id}/cancelar` | dueño (antes del inicio) o ADMIN | Cancela | 200 |
 
-Ningún DTO de respuesta incluye `password_hash`.
+Ningún DTO de respuesta incluye `password_hash`. `EspacioResponse` incluye el campo `activo`.
 
 ### Errores
 Todas las respuestas de error usan `ProblemDetail`:
