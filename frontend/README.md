@@ -1,59 +1,54 @@
-# Frontend
+# Frontend — CoworkingBooking
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.5.
+Web en Angular 22 para que los clientes reserven espacios del coworking y para que el ADMIN gestione espacios y reservas.
 
-## Development server
+## Requisitos
 
-To start a local development server, run:
+- Node 24 y npm
+- El backend corriendo en `http://localhost:8080` con `SPRING_PROFILES_ACTIVE=local` (ver `../backend/README.md`)
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Desarrollo local
 
 ```bash
-ng generate component component-name
+npm install
+npx ng serve            # http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+- `ng serve` usa `src/environments/environment.development.ts`, que apunta a `http://localhost:8080`.
+- El perfil `local` del backend ya permite CORS desde `http://localhost:4200`.
+- Admin local: `admin@coworking.local` / `admin12345`. Los clientes se registran desde `/registro`.
+
+## Tests
 
 ```bash
-ng generate --help
+npx ng test --watch=false
 ```
 
-## Building
+Cubren la lógica que puede fallar sin que se note: horas de Bogotá, estados de la cuadrícula, selección de bloques, sesión y mensajes de error.
 
-To build the project run:
+## Estructura
 
-```bash
-ng build
-```
+| Carpeta | Qué hay |
+|---|---|
+| `src/app/config.ts` | Constantes del coworking (zona `-05:00`, 07:00–22:00, bloques de 15 min, 90 días). Deben coincidir con `app.reservas` del backend. |
+| `src/app/api/` | Modelos, una función por endpoint (`ApiService`) y mensajes de error. |
+| `src/app/auth/` | Login, registro, sesión en `localStorage`, interceptor del token y guards. |
+| `src/app/reservar/` | Cuadrícula por fecha y la lógica de horas y bloques. |
+| `src/app/mis-reservas/` | Reservas del cliente. |
+| `src/app/admin/` | Espacios y todas las reservas (solo ADMIN). |
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Build para producción (AWS)
 
-## Running unit tests
+1. Cambia `apiUrl` en `src/environments/environment.ts` por la URL pública del backend, con HTTPS y sin barra final. Por ejemplo `https://api.midominio.com`.
+2. Construye:
+   ```bash
+   npx ng build
+   ```
+3. Sube el **contenido** de `dist/frontend/browser/` a tu hosting estático (por ejemplo, un bucket S3 detrás de CloudFront).
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+### Requisitos del hosting estático
 
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- **Rutas normales:** la app usa rutas como `/mis-reservas`, sin `#`. Si alguien recarga esa página o abre un enlace directo, el hosting debe devolver `index.html` con código 200; si no, devuelve 404.
+  - En CloudFront: *Error pages* → respuestas personalizadas para **403** y **404** → ruta `/index.html`, código de respuesta **200**.
+- **CORS:** el backend solo acepta peticiones de los orígenes en `APP_CORS_ORIGINS`. Agrega ahí la URL del frontend, por ejemplo `https://d1234abcd.cloudfront.net`.
+- **HTTPS:** el frontend en HTTPS no puede llamar a un backend en HTTP (el navegador lo bloquea). El backend también necesita HTTPS.
