@@ -1,7 +1,7 @@
 # CoworkingBooking v2 — Diseño del backend
 
 - **Fecha:** 2026-10-30
-- **Estado:** pendiente de revisión
+- **Estado:** aprobado e implementado (actualizado tras la revisión final, 2026-10-30)
 - **Alcance:** subproyecto 1 (backend). El frontend en Angular es un subproyecto aparte con su propio diseño.
 
 ## 1. Contexto y objetivo
@@ -125,6 +125,7 @@ Prefijo `/api`. Formato JSON. Documentación en `/swagger-ui.html` (solo perfil 
 | `POST /espacios` | ADMIN | Crea un espacio | 201 |
 | `PUT /espacios/{id}` | ADMIN | Edita un espacio | 200 |
 | `DELETE /espacios/{id}` | ADMIN | Desactiva un espacio | 204 |
+| `POST /espacios/{id}/activar` | ADMIN | Reactiva un espacio desactivado (idempotente) | 200 |
 | `POST /reservas` | autenticado | Crea una reserva a nombre del usuario del token | 201 |
 | `GET /reservas/mias` | autenticado | Reservas propias, más recientes primero | 200 |
 | `GET /reservas?espacioId=&fecha=` | ADMIN | Todas las reservas, con filtros opcionales | 200 |
@@ -138,12 +139,14 @@ Todas las respuestas de error usan `ProblemDetail`:
 
 | Código | Caso |
 |---|---|
-| 400 | Falla de `@Valid` o JSON mal formado (incluye lista de campos inválidos) |
+| 400 | Falla de `@Valid` o JSON mal formado (incluye `errores` por campo); valor que la base de datos no acepta, como una fecha fuera de rango (SQLState 22xxx) |
 | 401 | Sin token, token inválido o expirado; credenciales de login incorrectas |
 | 403 | Rol insuficiente para la ruta |
 | 404 | Recurso inexistente, espacio inactivo, o reserva ajena (para no revelar su existencia) |
 | 409 | Email ya registrado; reserva solapada; cancelar una reserva ya cancelada; conflicto de `@Version` |
-| 422 | Regla de horario incumplida o cancelación de una reserva ya iniciada por su dueño |
+| 422 | Regla de horario incumplida (incluida la anticipación máxima) o cancelación de una reserva ya iniciada por su dueño |
+
+El 409 por integridad se limita a SQLState 23xxx. Si el nombre de un espacio nuevo pertenece a uno desactivado, el 409 indica la ruta para reactivarlo.
 
 ## 6. Reglas de negocio de reservas
 
@@ -152,6 +155,7 @@ Todas las respuestas de error usan `ProblemDetail`:
 2. El espacio existe y está activo → si no, 404.
 3. `ReglasHorario.validar(inicio, fin)` → 422 con mensaje específico si falla alguna:
    - `horaInicio` en el futuro;
+   - `horaInicio` a no más de `anticipacion-maxima` (90 días) de ahora;
    - `horaFin` posterior a `horaInicio`;
    - duración entre `duracion-minima` y `duracion-maxima`;
    - inicio y fin alineados a bloques de `bloque` minutos;
@@ -172,11 +176,13 @@ Todas las respuestas de error usan `ProblemDetail`:
 ## 7. Seguridad
 
 - Spring Security stateless; CSRF desactivado (API sin cookies).
-- Contraseñas con `BCryptPasswordEncoder`. Registro: contraseña de 8 a 72 caracteres (72 es el límite de BCrypt).
-- `POST /auth/login` verifica credenciales y emite un JWT HS256 firmado con `JWT_SECRET` (mínimo 32 bytes). Claims: `sub` (id), `email`, `rol`. Expiración: 1 hora (configurable).
+- Contraseñas con `BCryptPasswordEncoder`. Registro: contraseña de al menos 8 caracteres y como máximo 72 **bytes** UTF-8 (límite de BCrypt), validado con la anotación `@MaxBytes(72)`; el error llega en `errores.password`.
+- El login tarda lo mismo exista o no el email: si no existe, compara contra un hash falso.
+- `POST /auth/login` verifica credenciales y emite un JWT HS256 firmado con `JWT_SECRET` (mínimo 32 bytes). Claims: `iss` = `coworking-booking`, `sub` (id), `email`, `rol`. Expiración: 1 hora (configurable). El decoder rechaza tokens con otro `iss`.
 - Validación del token con `spring-boot-starter-oauth2-resource-server` (`NimbusJwtDecoder` con clave secreta), mapeando el claim `rol` a la autoridad `ROLE_<rol>`.
 - Autorización por ruta en `SecurityConfig`. La propiedad de la reserva se comprueba en el servicio.
-- **ADMIN inicial:** `AdminInicial` (un `ApplicationRunner`) crea un ADMIN con `ADMIN_EMAIL` y `ADMIN_PASSWORD` si no existe ningún usuario con ese email. Si las variables no están definidas, no hace nada.
+- **ADMIN inicial:** `AdminInicial` (un `ApplicationRunner`) crea un ADMIN con `ADMIN_EMAIL` y `ADMIN_PASSWORD` si no existe ningún usuario con ese email. Si las variables no están definidas, no hace nada. Si `ADMIN_PASSWORD` supera 72 bytes, la app no arranca y lo dice en el error.
+- Las reglas de solo-ADMIN para `GET /api/usuarios` y `GET /api/reservas` cubren también `HEAD`, que Spring MVC envía a los mismos handlers.
 - **CORS** global: orígenes desde `app.cors.origins` (`APP_CORS_ORIGINS`, separados por coma), métodos GET/POST/PUT/DELETE y header `Authorization`.
 - Fuera de alcance: refresh tokens, recuperación y cambio de contraseña.
 
@@ -184,7 +190,8 @@ Todas las respuestas de error usan `ProblemDetail`:
 
 `application.yml` común + perfiles:
 
-- **`local`** (por defecto en desarrollo): Postgres de `docker-compose.yml` (`localhost:5432`), `show-sql`, Swagger activo, valores por defecto de desarrollo para `JWT_SECRET` y el ADMIN inicial.
+- No hay perfil por defecto: sin `SPRING_PROFILES_ACTIVE` la app exige `JWT_SECRET`, así un jar mal configurado nunca usa el secreto de desarrollo.
+- **`local`** (se activa con `SPRING_PROFILES_ACTIVE=local`): Postgres de `docker-compose.yml` (`localhost:5432`), `show-sql`, Swagger activo, valores por defecto de desarrollo para `JWT_SECRET` y el ADMIN inicial.
 - **`prod`**: todo desde variables de entorno (`DB_URL`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `APP_CORS_ORIGINS`). Sin valores por defecto para secretos. Swagger desactivado.
 - En todos: `spring.jpa.hibernate.ddl-auto=validate`, `spring.jpa.open-in-view=false`, Flyway activo.
 
@@ -199,6 +206,7 @@ app:
     duracion-minima: 30m
     duracion-maxima: 4h
     bloque: 15m
+    anticipacion-maxima: 90d
   jwt:
     expiracion: 1h
 ```
