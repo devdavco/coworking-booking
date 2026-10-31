@@ -31,3 +31,10 @@ app:
   admin:
     email: ${ADMIN_EMAIL:}
     password: ${ADMIN_PASSWORD:}
+  reservas:
+    zona-horaria: America/Bogota
+    apertura: "07:00"
+    cierre: "22:00"
+    duracion-minima: 30m
+    duracion-maxima: 4h
+    bloque: 15m
