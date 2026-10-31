@@ -1,0 +1,67 @@
+<h1>Reservar</h1>
+
+<label class="fecha">
+  Fecha
+  <input type="date" [value]="fecha()" [min]="hoy" [max]="maximo" (change)="cambiarFecha($any($event.target).value)" />
+</label>
+
+@if (confirmacion()) {
+  <p class="exito">{{ confirmacion() }}</p>
+}
+@if (errorReserva()) {
+  <p class="error">{{ errorReserva() }}</p>
+}
+
+@if (cargando()) {
+  <p class="suave">Cargando…</p>
+} @else if (errorCarga()) {
+  <p class="error">{{ errorCarga() }}</p>
+  <button (click)="cargar()">Reintentar</button>
+} @else if (filas().length === 0) {
+  <p class="suave">Todavía no hay espacios disponibles</p>
+} @else {
+  <p class="suave">Haz clic en el bloque donde empieza tu reserva y luego en el bloque donde termina.</p>
+  <div class="contenedor">
+    <table class="cuadricula">
+      <thead>
+        <tr>
+          <th class="espacio">Espacio</th>
+          @for (hora of horas; track hora) {
+            <th colspan="4" class="hora">{{ hora }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (fila of filas(); track fila.espacio.id) {
+          <tr>
+            <th class="espacio">
+              {{ fila.espacio.nombre }}
+              <small>{{ nombreTipo[fila.espacio.tipo] }} · {{ fila.espacio.capacidad }} pers.</small>
+            </th>
+            @for (indice of indices; track indice) {
+              <td
+                class="bloque {{ fila.estados[indice] }}"
+                [class.seleccionado]="seleccionado(fila, indice)"
+                [class.inicio-hora]="indice % 4 === 0"
+                (click)="clic(fila, indice)"
+              ></td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <p class="leyenda">
+    <span class="muestra libre"></span> Libre
+    <span class="muestra ocupado"></span> Ocupado (incluye limpieza)
+    <span class="muestra pasado"></span> Ya pasó
+    <span class="muestra seleccionado"></span> Tu selección
+  </p>
+}
+
+@if (resumen()) {
+  <div class="tarjeta resumen">
+    <span>{{ resumen() }}</span>
+    <button (click)="reservar()" [disabled]="reservando()">Reservar</button>
+  </div>
+}

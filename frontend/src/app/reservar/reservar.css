@@ -1,0 +1,119 @@
+.fecha {
+  max-width: 220px;
+}
+
+.contenedor {
+  overflow-x: auto;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+}
+
+.cuadricula {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: auto;
+}
+
+.cuadricula th,
+.cuadricula td {
+  padding: 0;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.hora {
+  font-size: 0.75rem;
+  font-weight: normal;
+  color: var(--color-suave);
+  padding: 4px 0 4px 2px;
+}
+
+.espacio {
+  position: sticky;
+  left: 0;
+  min-width: 170px;
+  padding: 6px 10px !important;
+  background: var(--color-superficie);
+  text-align: left;
+  z-index: 1;
+}
+
+.espacio small {
+  display: block;
+  font-weight: normal;
+  color: var(--color-suave);
+}
+
+.bloque {
+  width: 16px;
+  min-width: 16px;
+  height: 44px;
+  border-left: 1px solid var(--color-superficie);
+}
+
+.bloque.inicio-hora {
+  border-left: 1px solid var(--color-borde);
+}
+
+.bloque.libre {
+  background: var(--color-libre);
+  cursor: pointer;
+}
+
+.bloque.libre:hover {
+  filter: brightness(0.92);
+}
+
+.bloque.ocupado {
+  background: var(--color-ocupado);
+}
+
+.bloque.pasado {
+  background: var(--color-pasado);
+}
+
+.bloque.seleccionado {
+  background: var(--color-seleccion);
+}
+
+.leyenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 0.85rem;
+  color: var(--color-suave);
+}
+
+.muestra {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  vertical-align: middle;
+}
+
+.muestra.libre {
+  background: var(--color-libre);
+}
+
+.muestra.ocupado {
+  background: var(--color-ocupado);
+}
+
+.muestra.pasado {
+  background: var(--color-pasado);
+}
+
+.muestra.seleccionado {
+  background: var(--color-seleccion);
+}
+
+.resumen {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+}
