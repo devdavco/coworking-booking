@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 public class AuthService {
@@ -24,11 +25,14 @@ public class AuthService {
     private final UsuarioRepository usuarios;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    /** Hash contra el que se compara cuando el email no existe, para que ese caso tarde lo mismo. */
+    private final String hashFalso;
 
     public AuthService(UsuarioRepository usuarios, PasswordEncoder passwordEncoder, JwtService jwtService) {
         this.usuarios = usuarios;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.hashFalso = passwordEncoder.encode("hash-falso-para-igualar-tiempos");
     }
 
     @Transactional
@@ -47,10 +51,13 @@ public class AuthService {
         if (request.password().getBytes(StandardCharsets.UTF_8).length > LIMITE_BYTES_BCRYPT) {
             throw new CredencialesInvalidasException();
         }
-        Usuario usuario = usuarios.findByEmail(normalizarEmail(request.email()))
-                .filter(encontrado -> passwordEncoder.matches(request.password(), encontrado.getPasswordHash()))
-                .orElseThrow(CredencialesInvalidasException::new);
-        return jwtService.generar(usuario);
+        Optional<Usuario> usuario = usuarios.findByEmail(normalizarEmail(request.email()));
+        String hash = usuario.map(Usuario::getPasswordHash).orElse(hashFalso);
+        boolean coincide = passwordEncoder.matches(request.password(), hash);
+        if (usuario.isEmpty() || !coincide) {
+            throw new CredencialesInvalidasException();
+        }
+        return jwtService.generar(usuario.get());
     }
 
     public static String normalizarEmail(String email) {
