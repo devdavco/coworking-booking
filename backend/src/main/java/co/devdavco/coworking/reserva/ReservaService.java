@@ -1,19 +1,27 @@
 package co.devdavco.coworking.reserva;
 
+import co.devdavco.coworking.auth.UsuarioActual;
 import co.devdavco.coworking.common.ConflictoException;
+import co.devdavco.coworking.common.RecursoNoEncontradoException;
+import co.devdavco.coworking.common.ReglaNegocioException;
 import co.devdavco.coworking.espacio.Espacio;
 import co.devdavco.coworking.espacio.EspacioService;
 import co.devdavco.coworking.reserva.dto.CrearReservaRequest;
+import co.devdavco.coworking.reserva.dto.FranjaOcupada;
 import co.devdavco.coworking.reserva.dto.ReservaResponse;
 import co.devdavco.coworking.usuario.Usuario;
 import co.devdavco.coworking.usuario.UsuarioRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -64,6 +72,67 @@ public class ReservaService {
             throw ex;
         }
         return mapear(reserva);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservaResponse> listarMias(Long usuarioId) {
+        return reservas.findAllByUsuario_IdOrderByHoraInicioDesc(usuarioId).stream()
+                .map(this::mapear)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ReservaResponse> listar(Long espacioId, LocalDate fecha) {
+        List<Specification<Reserva>> filtros = new ArrayList<>();
+        if (espacioId != null) {
+            filtros.add(ReservaSpecs.delEspacio(espacioId));
+        }
+        if (fecha != null) {
+            filtros.add(ReservaSpecs.seCruzaCon(inicioDelDia(fecha), inicioDelDia(fecha.plusDays(1))));
+        }
+        return reservas.findAll(Specification.allOf(filtros), Sort.by(Sort.Direction.DESC, "horaInicio")).stream()
+                .map(this::mapear)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ReservaResponse obtener(UsuarioActual actual, Long id) {
+        return mapear(buscarVisible(actual, id));
+    }
+
+    @Transactional
+    public ReservaResponse cancelar(UsuarioActual actual, Long id) {
+        Reserva reserva = buscarVisible(actual, id);
+        if (reserva.getEstado() == EstadoReserva.CANCELADA) {
+            throw new ConflictoException("La reserva ya está cancelada");
+        }
+        if (!actual.esAdmin() && !reserva.getHoraInicio().isAfter(clock.instant())) {
+            throw new ReglaNegocioException("No puedes cancelar una reserva que ya empezó");
+        }
+        reserva.cancelar();
+        return mapear(reserva);
+    }
+
+    @Transactional(readOnly = true)
+    public List<FranjaOcupada> ocupacion(Long espacioId, LocalDate fecha) {
+        espacioService.buscarActivo(espacioId);
+        return reservas.findSolapadas(espacioId, EstadoReserva.CONFIRMADA,
+                        inicioDelDia(fecha), inicioDelDia(fecha.plusDays(1))).stream()
+                .map(reserva -> new FranjaOcupada(
+                        reserva.getHoraInicio().atZone(propiedades.zonaHoraria()).toOffsetDateTime(),
+                        reserva.getHoraFinTotal().atZone(propiedades.zonaHoraria()).toOffsetDateTime()))
+                .toList();
+    }
+
+    /** Un usuario solo ve sus reservas; si pide la de otro, responde 404 para no revelar que existe. */
+    private Reserva buscarVisible(UsuarioActual actual, Long id) {
+        return reservas.findById(id)
+                .filter(reserva -> actual.esAdmin() || reserva.esDe(actual.id()))
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe la reserva " + id));
+    }
+
+    private Instant inicioDelDia(LocalDate fecha) {
+        return fecha.atStartOfDay(propiedades.zonaHoraria()).toInstant();
     }
 
     private ReservaResponse mapear(Reserva reserva) {
