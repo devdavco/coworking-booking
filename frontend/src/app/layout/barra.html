@@ -1,0 +1,13 @@
+@if (sesion.usuario(); as usuario) {
+  <nav>
+    <strong class="marca">CoworkingBooking</strong>
+    <a routerLink="/reservar" routerLinkActive="activo">Reservar</a>
+    <a routerLink="/mis-reservas" routerLinkActive="activo">Mis reservas</a>
+    @if (sesion.esAdmin()) {
+      <a routerLink="/admin/espacios" routerLinkActive="activo">Espacios</a>
+      <a routerLink="/admin/reservas" routerLinkActive="activo">Todas las reservas</a>
+    }
+    <span class="usuario">{{ usuario.nombre }}</span>
+    <button class="secundario" (click)="salir()">Salir</button>
+  </nav>
+}

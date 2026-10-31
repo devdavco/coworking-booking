@@ -1,0 +1,27 @@
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--color-superficie);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.marca {
+  margin-right: 8px;
+}
+
+a {
+  text-decoration: none;
+}
+
+a.activo {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.usuario {
+  margin-left: auto;
+  color: var(--color-suave);
+}

@@ -1,0 +1,31 @@
+<div class="tarjeta formulario">
+  <h1>Crear cuenta</h1>
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+  <form (ngSubmit)="registrar()">
+    <label>
+      Nombre
+      <input name="nombre" [(ngModel)]="nombre" required autocomplete="name" />
+      @if (errores()['nombre']) {
+        <span class="error">{{ errores()['nombre'] }}</span>
+      }
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" [(ngModel)]="email" required autocomplete="email" />
+      @if (errores()['email']) {
+        <span class="error">{{ errores()['email'] }}</span>
+      }
+    </label>
+    <label>
+      Contraseña (mínimo 8 caracteres)
+      <input type="password" name="password" [(ngModel)]="password" required autocomplete="new-password" />
+      @if (errores()['password']) {
+        <span class="error">{{ errores()['password'] }}</span>
+      }
+    </label>
+    <button type="submit" [disabled]="enviando()">Crear cuenta</button>
+  </form>
+  <p class="suave">¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a></p>
+</div>
