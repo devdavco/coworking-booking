@@ -32,9 +32,7 @@ public class EspacioService {
     @Transactional
     public EspacioResponse crear(EspacioRequest request) {
         String nombre = request.nombre().trim();
-        if (espacios.existsByNombreIgnoreCase(nombre)) {
-            throw nombreDuplicado(nombre);
-        }
+        verificarNombreLibre(nombre, null);
         Espacio espacio = new Espacio(nombre, request.tipo(), request.capacidad(), request.minutosLimpieza());
         return EspacioResponse.desde(espacios.save(espacio));
     }
@@ -43,9 +41,7 @@ public class EspacioService {
     public EspacioResponse actualizar(Long id, EspacioRequest request) {
         Espacio espacio = buscarActivo(id);
         String nombre = request.nombre().trim();
-        if (espacios.existsByNombreIgnoreCaseAndIdNot(nombre, id)) {
-            throw nombreDuplicado(nombre);
-        }
+        verificarNombreLibre(nombre, id);
         espacio.setNombre(nombre);
         espacio.setTipo(request.tipo());
         espacio.setCapacidad(request.capacidad());
@@ -58,13 +54,35 @@ public class EspacioService {
         buscarActivo(id).setActivo(false);
     }
 
+    /** Idempotente: activar un espacio ya activo no es un error. */
+    @Transactional
+    public EspacioResponse activar(Long id) {
+        Espacio espacio = espacios.findById(id)
+                .orElseThrow(() -> new RecursoNoEncontradoException("No existe el espacio " + id));
+        espacio.setActivo(true);
+        return EspacioResponse.desde(espacio);
+    }
+
     /** Devuelve la entidad; lo usan otros servicios (por ejemplo, reservas). */
     public Espacio buscarActivo(Long id) {
         return espacios.findByIdAndActivoTrue(id)
                 .orElseThrow(() -> new RecursoNoEncontradoException("No existe el espacio " + id));
     }
 
-    private static ConflictoException nombreDuplicado(String nombre) {
-        return new ConflictoException("Ya existe un espacio llamado '" + nombre + "'");
+    /** idActual es null al crear; al actualizar, el propio espacio puede conservar su nombre. */
+    private void verificarNombreLibre(String nombre, Long idActual) {
+        espacios.findByNombreIgnoreCase(nombre)
+                .filter(existente -> !existente.getId().equals(idActual))
+                .ifPresent(existente -> {
+                    throw nombreDuplicado(existente);
+                });
+    }
+
+    private static ConflictoException nombreDuplicado(Espacio existente) {
+        if (!existente.isActivo()) {
+            return new ConflictoException("Ya existe un espacio desactivado llamado '" + existente.getNombre()
+                    + "'; puedes reactivarlo con POST /api/espacios/" + existente.getId() + "/activar");
+        }
+        return new ConflictoException("Ya existe un espacio llamado '" + existente.getNombre() + "'");
     }
 }

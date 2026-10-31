@@ -130,6 +130,49 @@ class EspacioControllerTest extends IntegrationTest {
     }
 
     @Test
+    void unEspacioDesactivadoSePuedeReactivar() throws Exception {
+        long id = crearEspacio(SALA_ANDES);
+        mvc.perform(delete("/api/espacios/{id}", id).header(AUTHORIZATION, admin))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(post("/api/espacios/{id}/activar", id).header(AUTHORIZATION, admin))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Sala Andes"));
+
+        mvc.perform(get("/api/espacios/{id}", id).header(AUTHORIZATION, admin))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void elNombreDeUnEspacioDesactivadoSugiereReactivarlo() throws Exception {
+        long id = crearEspacio(SALA_ANDES);
+        mvc.perform(delete("/api/espacios/{id}", id).header(AUTHORIZATION, admin))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(post("/api/espacios")
+                        .header(AUTHORIZATION, admin)
+                        .contentType(APPLICATION_JSON)
+                        .content(SALA_ANDES))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail", containsString("desactivado")))
+                .andExpect(jsonPath("$.detail", containsString("/api/espacios/" + id + "/activar")));
+    }
+
+    @Test
+    void activarUnEspacioInexistenteDevuelve404() throws Exception {
+        mvc.perform(post("/api/espacios/{id}/activar", 999).header(AUTHORIZATION, admin))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void unUsuarioNoPuedeReactivarEspacios() throws Exception {
+        long id = crearEspacio(SALA_ANDES);
+
+        mvc.perform(post("/api/espacios/{id}/activar", id).header(AUTHORIZATION, tokenUsuario()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void unEspacioDesactivadoYaNoSePuedeConsultar() throws Exception {
         long id = crearEspacio(SALA_ANDES);
 

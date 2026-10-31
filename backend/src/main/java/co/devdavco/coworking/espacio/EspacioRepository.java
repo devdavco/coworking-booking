@@ -11,7 +11,5 @@ public interface EspacioRepository extends JpaRepository<Espacio, Long> {
 
     Optional<Espacio> findByIdAndActivoTrue(Long id);
 
-    boolean existsByNombreIgnoreCase(String nombre);
-
-    boolean existsByNombreIgnoreCaseAndIdNot(String nombre, Long id);
+    Optional<Espacio> findByNombreIgnoreCase(String nombre);
 }

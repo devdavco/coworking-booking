@@ -49,6 +49,11 @@ public class EspacioController {
         return espacioService.actualizar(id, request);
     }
 
+    @PostMapping("/{id}/activar")
+    public EspacioResponse activar(@PathVariable Long id) {
+        return espacioService.activar(id);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void desactivar(@PathVariable Long id) {

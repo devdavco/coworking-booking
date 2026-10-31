@@ -42,7 +42,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/registro", "/api/auth/login").permitAll()
                         .requestMatchers("/actuator/health", "/error").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/espacios").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/espacios", "/api/espacios/*/activar").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/espacios/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/espacios/**").hasRole("ADMIN")
                         // HEAD también llega a los @GetMapping: hay que protegerlo igual que GET.
