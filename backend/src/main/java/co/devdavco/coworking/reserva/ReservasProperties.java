@@ -16,7 +16,8 @@ public record ReservasProperties(
         @DateTimeFormat(pattern = "HH:mm") LocalTime cierre,
         Duration duracionMinima,
         Duration duracionMaxima,
-        Duration bloque) {
+        Duration bloque,
+        Duration anticipacionMaxima) {
 
     public ReservasProperties {
         Objects.requireNonNull(zonaHoraria, "app.reservas.zona-horaria es obligatorio");
@@ -25,6 +26,7 @@ public record ReservasProperties(
         Objects.requireNonNull(duracionMinima, "app.reservas.duracion-minima es obligatorio");
         Objects.requireNonNull(duracionMaxima, "app.reservas.duracion-maxima es obligatorio");
         Objects.requireNonNull(bloque, "app.reservas.bloque es obligatorio");
+        Objects.requireNonNull(anticipacionMaxima, "app.reservas.anticipacion-maxima es obligatorio");
         if (!cierre.isAfter(apertura)) {
             throw new IllegalArgumentException("app.reservas.cierre debe ser posterior a la apertura");
         }
@@ -36,6 +38,9 @@ public record ReservasProperties(
         }
         if (bloque.isNegative() || bloque.isZero()) {
             throw new IllegalArgumentException("app.reservas.bloque debe ser positivo");
+        }
+        if (anticipacionMaxima.isNegative() || anticipacionMaxima.isZero()) {
+            throw new IllegalArgumentException("app.reservas.anticipacion-maxima debe ser positiva");
         }
     }
 }

@@ -36,3 +36,4 @@ app:
     duracion-minima: 30m
     duracion-maxima: 4h
     bloque: 15m
+    anticipacion-maxima: 90d

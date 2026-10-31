@@ -40,6 +40,13 @@ class ReglasHorarioTest {
     }
 
     @Test
+    void respetaLaAnticipacionMaxima() {
+        // "Ahora" es 2026-11-02 07:00: 2027-02-01 está a 91 días y 2027-01-30 a 89.
+        assertRechaza("2027-02-01T09:00", "2027-02-01T10:00", "90 días de anticipación");
+        assertAcepta("2027-01-30T09:00", "2027-01-30T10:00");
+    }
+
+    @Test
     void rechazaFinAntesDelInicio() {
         assertRechaza("2026-11-03T10:00", "2026-11-03T09:00", "posterior");
     }

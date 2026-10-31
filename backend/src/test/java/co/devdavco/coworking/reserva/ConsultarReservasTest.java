@@ -179,6 +179,14 @@ class ConsultarReservasTest extends IntegrationTest {
     }
 
     @Test
+    void laOcupacionConUnaFechaFueraDeRangoDevuelve400() throws Exception {
+        mvc.perform(get("/api/espacios/{id}/ocupacion", sala.getId())
+                        .param("fecha", "+300000-01-01")
+                        .header(AUTHORIZATION, tokenAna))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void laOcupacionExigeLaFecha() throws Exception {
         mvc.perform(get("/api/espacios/{id}/ocupacion", sala.getId()).header(AUTHORIZATION, tokenAna))
                 .andExpect(status().isBadRequest());

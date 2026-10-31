@@ -96,6 +96,15 @@ class CrearReservaTest extends IntegrationTest {
     }
 
     @Test
+    void rechazaUnaReservaDemasiadoLejana() throws Exception {
+        OffsetDateTime lejos = manana(9, 0).plusYears(298000);
+
+        reservar(salaId, lejos, lejos.plusHours(1))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.detail", containsString("anticipación")));
+    }
+
+    @Test
     void rechazaReservarUnEspacioInactivo() throws Exception {
         Espacio cabina = new Espacio("Cabina 1", TipoEspacio.CABINA, 1, 0);
         cabina.setActivo(false);

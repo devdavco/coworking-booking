@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -50,8 +51,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 "El recurso fue modificado por otra petición; vuelve a intentarlo");
     }
 
+    /**
+     * Postgres agrupa sus errores por SQLState: la clase 23 son violaciones de integridad (409) y la 22 son
+     * datos inválidos, como una fecha fuera de rango (400).
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     ProblemDetail integridad(DataIntegrityViolationException ex) {
+        String sqlState = sqlState(ex);
+        if (sqlState != null && sqlState.startsWith("22")) {
+            return problema(HttpStatus.BAD_REQUEST, "Datos inválidos", "Algún valor está fuera del rango permitido");
+        }
         return problema(HttpStatus.CONFLICT, "Conflicto", "La operación entra en conflicto con datos existentes");
     }
 
@@ -65,6 +74,15 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail detalle = problema(HttpStatus.BAD_REQUEST, "Datos inválidos", "La petición tiene campos inválidos");
         detalle.setProperty("errores", errores);
         return ResponseEntity.badRequest().body(detalle);
+    }
+
+    private static String sqlState(Throwable ex) {
+        for (Throwable causa = ex; causa != null; causa = causa.getCause()) {
+            if (causa instanceof SQLException sql && sql.getSQLState() != null) {
+                return sql.getSQLState();
+            }
+        }
+        return null;
     }
 
     private static ProblemDetail problema(HttpStatus status, String titulo, String detalle) {

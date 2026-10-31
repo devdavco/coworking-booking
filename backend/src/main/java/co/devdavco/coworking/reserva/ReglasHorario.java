@@ -24,6 +24,10 @@ public class ReglasHorario {
         if (!inicio.isAfter(clock.instant())) {
             throw new ReglaNegocioException("La reserva debe empezar en el futuro");
         }
+        if (inicio.isAfter(clock.instant().plus(propiedades.anticipacionMaxima()))) {
+            throw new ReglaNegocioException("No se puede reservar con más de "
+                    + propiedades.anticipacionMaxima().toDays() + " días de anticipación");
+        }
         if (!fin.isAfter(inicio)) {
             throw new ReglaNegocioException("La hora de fin debe ser posterior a la de inicio");
         }

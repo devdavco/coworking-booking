@@ -24,13 +24,14 @@ class ReservasPropertiesTest extends IntegrationTest {
         assertThat(propiedades.duracionMinima()).isEqualTo(Duration.ofMinutes(30));
         assertThat(propiedades.duracionMaxima()).isEqualTo(Duration.ofHours(4));
         assertThat(propiedades.bloque()).isEqualTo(Duration.ofMinutes(15));
+        assertThat(propiedades.anticipacionMaxima()).isEqualTo(Duration.ofDays(90));
     }
 
     @Test
     void rechazaUnCierreAntesDeLaApertura() {
         assertThatThrownBy(() -> new ReservasProperties(ZoneId.of("America/Bogota"),
                 LocalTime.of(22, 0), LocalTime.of(7, 0),
-                Duration.ofMinutes(30), Duration.ofHours(4), Duration.ofMinutes(15)))
+                Duration.ofMinutes(30), Duration.ofHours(4), Duration.ofMinutes(15), Duration.ofDays(90)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -38,7 +39,7 @@ class ReservasPropertiesTest extends IntegrationTest {
     void rechazaUnaDuracionMaximaMenorQueLaMinima() {
         assertThatThrownBy(() -> new ReservasProperties(ZoneId.of("America/Bogota"),
                 LocalTime.of(7, 0), LocalTime.of(22, 0),
-                Duration.ofHours(2), Duration.ofHours(1), Duration.ofMinutes(15)))
+                Duration.ofHours(2), Duration.ofHours(1), Duration.ofMinutes(15), Duration.ofDays(90)))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

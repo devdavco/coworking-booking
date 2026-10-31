@@ -21,7 +21,7 @@ final class Fixtures {
 
     static ReservasProperties propiedades() {
         return new ReservasProperties(BOGOTA, LocalTime.of(7, 0), LocalTime.of(22, 0),
-                Duration.ofMinutes(30), Duration.ofHours(4), Duration.ofMinutes(15));
+                Duration.ofMinutes(30), Duration.ofHours(4), Duration.ofMinutes(15), Duration.ofDays(90));
     }
 
     /** Convierte "2026-11-03T09:00" (hora de Bogotá) a Instant. */
