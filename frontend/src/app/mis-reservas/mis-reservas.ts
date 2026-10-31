@@ -26,6 +26,7 @@ export class MisReservas implements OnInit {
   }
 
   cargar(): void {
+    this.error.set('');
     this.cargando.set(true);
     this.api.misReservas().subscribe({
       next: (reservas) => {

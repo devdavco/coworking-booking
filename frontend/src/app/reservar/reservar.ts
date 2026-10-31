@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { forkJoin, map, of, switchMap } from 'rxjs';
+import { Subscription, forkJoin, map, of, switchMap } from 'rxjs';
 import { ApiService } from '../api/api.service';
 import { mensajeDeError } from '../api/errores';
 import { ANTICIPACION_DIAS, BLOQUE_MINUTOS, NOMBRE_TIPO } from '../config';
@@ -13,6 +13,8 @@ import { formatoFecha, formatoHora, hoyEnBogota, sumarDias } from './horas';
 })
 export class Reservar implements OnInit {
   private readonly api = inject(ApiService);
+  /** Carga en curso; se cancela si cambia la fecha antes de que termine. */
+  private carga?: Subscription;
 
   protected readonly nombreTipo = NOMBRE_TIPO;
   protected readonly hoy = hoyEnBogota(new Date());
@@ -60,7 +62,8 @@ export class Reservar implements OnInit {
     this.cargando.set(true);
     this.errorCarga.set('');
     this.seleccion.set(null);
-    this.api
+    this.carga?.unsubscribe();
+    this.carga = this.api
       .espacios()
       .pipe(
         switchMap((espacios) =>

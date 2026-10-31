@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { forkJoin } from 'rxjs';
+import { Subscription, forkJoin } from 'rxjs';
 import { ApiService } from '../api/api.service';
 import { mensajeDeError } from '../api/errores';
 import { Espacio, Reserva } from '../api/modelos';
@@ -12,6 +12,8 @@ import { hoyEnBogota } from '../reservar/horas';
 })
 export class AdminReservas implements OnInit {
   private readonly api = inject(ApiService);
+  /** Carga en curso; se cancela si cambian los filtros antes de que termine. */
+  private carga?: Subscription;
 
   protected readonly textoEstado = textoEstado;
   protected readonly fechaReserva = fechaReserva;
@@ -48,7 +50,9 @@ export class AdminReservas implements OnInit {
   }
 
   cargar(): void {
-    this.api.reservas({ fecha: this.fecha() || undefined, espacioId: this.espacioId() || undefined }).subscribe({
+    this.error.set('');
+    this.carga?.unsubscribe();
+    this.carga = this.api.reservas({ fecha: this.fecha() || undefined, espacioId: this.espacioId() || undefined }).subscribe({
       next: (reservas) => this.reservas.set(reservas),
       error: (err) => this.error.set(mensajeDeError(err)),
     });

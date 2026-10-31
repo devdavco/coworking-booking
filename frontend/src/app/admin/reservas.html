@@ -46,9 +46,11 @@
         </td>
       </tr>
     } @empty {
-      <tr>
-        <td colspan="6" class="suave">No hay reservas para estos filtros</td>
-      </tr>
+      @if (!error()) {
+        <tr>
+          <td colspan="6" class="suave">No hay reservas para estos filtros</td>
+        </tr>
+      }
     }
   </tbody>
 </table>

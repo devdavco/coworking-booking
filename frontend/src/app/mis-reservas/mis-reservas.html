@@ -6,6 +6,8 @@
 
 @if (cargando()) {
   <p class="suave">Cargando…</p>
+} @else if (error() && reservas().length === 0) {
+  <button (click)="cargar()">Reintentar</button>
 } @else if (reservas().length === 0) {
   <p class="suave">Todavía no tienes reservas. <a routerLink="/reservar">Reserva un espacio</a></p>
 } @else {

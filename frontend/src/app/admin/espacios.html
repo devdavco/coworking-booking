@@ -73,9 +73,11 @@
         </td>
       </tr>
     } @empty {
-      <tr>
-        <td colspan="6" class="suave">Todavía no hay espacios</td>
-      </tr>
+      @if (!error()) {
+        <tr>
+          <td colspan="6" class="suave">Todavía no hay espacios</td>
+        </tr>
+      }
     }
   </tbody>
 </table>
