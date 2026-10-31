@@ -28,8 +28,7 @@ class EspacioControllerTest extends IntegrationTest {
 
     @BeforeEach
     void autenticar() {
-        // Todavía no hay seguridad: el header se ignora. La Tarea 4 cambia esto por un token real.
-        admin = "Bearer sin-seguridad";
+        admin = tokenAdmin();
     }
 
     private long crearEspacio(String json) throws Exception {

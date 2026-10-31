@@ -21,3 +21,10 @@ springdoc:
     enabled: false
   swagger-ui:
     enabled: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiracion: 1h
+  cors:
+    origins: ${APP_CORS_ORIGINS:}

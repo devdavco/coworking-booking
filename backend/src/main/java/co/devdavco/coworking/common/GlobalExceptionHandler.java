@@ -39,6 +39,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return problema(HttpStatus.UNPROCESSABLE_ENTITY, "Regla de negocio incumplida", ex.getMessage());
     }
 
+    @ExceptionHandler(CredencialesInvalidasException.class)
+    ProblemDetail credencialesInvalidas(CredencialesInvalidasException ex) {
+        return problema(HttpStatus.UNAUTHORIZED, "Credenciales inválidas", ex.getMessage());
+    }
+
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     ProblemDetail versionDesactualizada(ObjectOptimisticLockingFailureException ex) {
         return problema(HttpStatus.CONFLICT, "Conflicto",

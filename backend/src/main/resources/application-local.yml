@@ -11,3 +11,9 @@ springdoc:
     enabled: true
   swagger-ui:
     enabled: true
+
+app:
+  jwt:
+    secret: dev-secret-solo-para-local-no-usar-en-prod-0123456789
+  cors:
+    origins: http://localhost:4200
