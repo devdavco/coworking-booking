@@ -14,9 +14,10 @@ El objetivo de aprendizaje del proyecto es desplegarlo en AWS, y esa parte la ha
 - Registro, login y cierre de sesión.
 - Pantalla **Reservar**: el cliente elige una fecha y ve en una cuadrícula todos los espacios con sus franjas libres y ocupadas. Selecciona un rango libre de un espacio y reserva.
 - Pantalla **Mis reservas**: ver las reservas propias y cancelar las que todavía no empezaron.
+- Para el **ADMIN**, dos pantallas más: **Espacios** (crear, editar, desactivar, reactivar) y **Todas las reservas** (filtrar y cancelar). Agregadas a pedido de David, manteniéndolas igual de sencillas.
 
 ### Fuera de alcance
-- Pantallas de administrador (gestionar espacios, ver todas las reservas). El admin sigue usando Swagger.
+- Gestión de usuarios desde la web: cambiar roles, crear otros administradores o borrar cuentas.
 - Recuperar contraseña, editar perfil, refresh tokens, varios idiomas, modo oscuro.
 - El despliegue en AWS (es la etapa siguiente y la hace David).
 
@@ -40,10 +41,14 @@ El objetivo de aprendizaje del proyecto es desplegarlo en AWS, y esa parte la ha
 | `/registro` | pública | Nombre, email y contraseña. Al registrarse, hace login automático con esas credenciales y va a `/reservar`. |
 | `/reservar` | con sesión | Selector de fecha y cuadrícula de espacios por horas (ver sección 4). Es la ruta por defecto. |
 | `/mis-reservas` | con sesión | Tabla de reservas propias (ver sección 5). |
+| `/admin/espacios` | ADMIN | Gestión de espacios (ver sección 5b). |
+| `/admin/reservas` | ADMIN | Todas las reservas (ver sección 5b). |
 
 - Ruta vacía y rutas desconocidas redirigen a `/reservar`.
 - Un guard envía a `/login` si no hay token o si ya expiró.
-- Con sesión, una barra superior muestra "Reservar", "Mis reservas", el nombre del usuario (de `GET /api/usuarios/me`) y "Salir".
+- Con sesión, una barra superior muestra "Reservar", "Mis reservas", el nombre del usuario (de `GET /api/usuarios/me`) y "Salir". Si el rol de `/usuarios/me` es ADMIN, muestra además "Espacios" y "Todas las reservas".
+- Un segundo guard protege `/admin/*`: si el usuario no es ADMIN, lo envía a `/reservar`. El backend vuelve a comprobar el rol en cada petición, así que el guard solo evita mostrar pantallas inútiles.
+- El ADMIN también puede reservar desde `/reservar` como cualquier cliente.
 
 ## 4. Pantalla Reservar
 
@@ -83,6 +88,28 @@ El desfase `-05:00` y el rango 07:00–22:00 son constantes en un solo archivo d
 - Botón **Cancelar** solo en reservas CONFIRMADAS que todavía no empezaron. Pide confirmación con `confirm()` y llama a `POST /api/reservas/{id}/cancelar`. Luego recarga la lista.
 - Si no hay reservas, un mensaje con un enlace a `/reservar`.
 
+## 5b. Pantallas de administrador
+
+### Espacios (`/admin/espacios`)
+- Tabla con todos los espacios, activos e inactivos: nombre, tipo, capacidad, minutos de limpieza y estado.
+- Arriba de la tabla, un formulario único con nombre, tipo (lista desplegable con los 4 tipos), capacidad y minutos de limpieza:
+  - sin espacio seleccionado, **Crear** llama a `POST /api/espacios`;
+  - al pulsar **Editar** en una fila, el formulario se llena con sus datos y **Guardar** llama a `PUT /api/espacios/{id}`. Un botón **Cancelar** vuelve al modo crear.
+- En cada fila: **Desactivar** (con `confirm()`, `DELETE /api/espacios/{id}`) si está activo, o **Reactivar** (`POST /api/espacios/{id}/activar`) si está inactivo.
+- Los errores se muestran como en los demás formularios: por campo para el 400 y con `detail` para el resto, por ejemplo el 409 de nombre duplicado.
+
+### Todas las reservas (`/admin/reservas`)
+- Filtros: fecha (por defecto hoy, se puede vaciar para ver todas) y espacio (lista desplegable opcional). Llama a `GET /api/reservas?fecha=&espacioId=`.
+- Tabla con espacio, cliente, fecha, horario y estado. El cliente se muestra con nombre y email, cruzando `usuarioId` con `GET /api/usuarios`.
+- **Cancelar** (con `confirm()`) en toda reserva CONFIRMADA, aunque ya haya empezado: el ADMIN puede hacerlo según el backend.
+
+### Cambio necesario en el backend *(decisión de Claude)*
+`GET /api/espacios` solo devuelve espacios activos, así que sin un cambio el ADMIN no podría ver ni reactivar los inactivos. Se agrega:
+- `GET /api/espacios/todos`, solo ADMIN, con activos e inactivos ordenados por nombre;
+- el campo `activo` en `EspacioResponse` (campo nuevo, no rompe a quien ya lo usa).
+
+Se construye con test primero, como el resto del backend, y se agrega al diseño del backend.
+
 ## 6. Autenticación y errores
 
 - El login guarda `token` y `expiraEn` en `localStorage`. La sesión es válida mientras `expiraEn` sea futuro.
@@ -105,9 +132,21 @@ El desfase `-05:00` y el rango 07:00–22:00 son constantes en un solo archivo d
 Pocos y solo para la lógica que se puede romper sin que se note:
 - cálculo de bloques y de su estado a partir de las franjas de ocupación y de la hora actual;
 - validación de una selección (misma fila, sin bloques ocupados ni pasados) y su conversión a `horaInicio` y `horaFin`;
-- validez de la sesión según `expiraEn`.
+- validez de la sesión según `expiraEn`;
+- en el backend, el endpoint nuevo `GET /api/espacios/todos` (incluye inactivos, 403 para USUARIO).
 
-Además, una prueba manual completa contra el backend local antes de terminar: registro, login, reservar, ver el error de cruce, cancelar y cerrar sesión.
+Además, una prueba manual completa contra el backend local antes de terminar:
+- como cliente: registro, login, reservar, ver el error de cruce, cancelar y cerrar sesión;
+- como ADMIN (`admin@coworking.local`): crear, editar, desactivar y reactivar un espacio, ver todas las reservas y cancelar la de un cliente;
+- un cliente que escribe `/admin/espacios` a mano termina en `/reservar`.
+
+## 8b. Cómo existe el ADMIN
+
+No hay registro de administradores desde la web. Lo crea el backend al arrancar (`AdminInicial`) con las variables `ADMIN_EMAIL` y `ADMIN_PASSWORD`, si ese email todavía no existe:
+- en local, el perfil `local` ya trae `admin@coworking.local` / `admin12345`;
+- en AWS, David define esas dos variables en el servicio donde corra el backend, con el valor guardado en Secrets Manager.
+
+El ADMIN inicia sesión en la misma pantalla de login que un cliente; el frontend sabe que es ADMIN por el rol que devuelve `/usuarios/me`.
 
 ## 9. Lo que queda a criterio de quien construya
 Nombres de componentes y servicios, estructura de carpetas dentro de `src/app`, estilos y colores, y textos menores de la interfaz.
