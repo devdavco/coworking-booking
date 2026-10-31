@@ -60,7 +60,12 @@ class AuthControllerTest extends IntegrationTest {
     @Test
     void rechazaContrasenaDeMasDe72Bytes() throws Exception {
         // 40 caracteres pero 80 bytes: pasa @Size y debe fallar por el límite de BCrypt, con 400 y no con 500.
-        registrar("Ana", "ana@mail.com", "ñ".repeat(40), 400);
+        mvc.perform(post("/api/auth/registro")
+                        .contentType(APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                Map.of("nombre", "Ana", "email", "ana@mail.com", "password", "ñ".repeat(40)))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errores.password").value("no puede ocupar más de 72 bytes"));
     }
 
     @Test
