@@ -10,11 +10,14 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+
 /** Al arrancar, crea el ADMIN definido en ADMIN_EMAIL / ADMIN_PASSWORD si todavía no existe. */
 @Component
 public class AdminInicial implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(AdminInicial.class);
+    private static final int LIMITE_BYTES_BCRYPT = 72;
 
     private final AdminProperties propiedades;
     private final UsuarioRepository usuarios;
@@ -31,6 +34,10 @@ public class AdminInicial implements ApplicationRunner {
         if (vacio(propiedades.email()) || vacio(propiedades.password())) {
             log.info("ADMIN_EMAIL o ADMIN_PASSWORD no definidos: no se crea administrador inicial");
             return;
+        }
+        if (propiedades.password().getBytes(StandardCharsets.UTF_8).length > LIMITE_BYTES_BCRYPT) {
+            // Mejor no arrancar que arrancar sin el administrador que se configuró.
+            throw new IllegalStateException("ADMIN_PASSWORD no puede ocupar más de 72 bytes (límite de BCrypt)");
         }
         String email = AuthService.normalizarEmail(propiedades.email());
         if (usuarios.existsByEmail(email)) {

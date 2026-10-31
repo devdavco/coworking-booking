@@ -11,6 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -49,6 +50,18 @@ class AdminInicialTest {
                 .run(null);
 
         verify(usuarios, never()).save(any());
+    }
+
+    @Test
+    void fallaConUnMensajeClaroSiLaContrasenaSuperaLos72Bytes() {
+        AdminInicial adminInicial = new AdminInicial(
+                new AdminProperties("admin@coworking.com", "ñ".repeat(40)), usuarios, passwordEncoder);
+
+        assertThatThrownBy(() -> adminInicial.run(null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ADMIN_PASSWORD")
+                .hasMessageContaining("72 bytes");
+        verifyNoInteractions(passwordEncoder);
     }
 
     @Test
