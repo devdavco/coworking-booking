@@ -10,6 +10,7 @@ import static org.springframework.http.HttpHeaders.ORIGIN;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.http.MediaType.APPLICATION_PROBLEM_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.head;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -45,6 +46,16 @@ class SeguridadTest extends IntegrationTest {
                                 {"nombre":"Sala Andes","tipo":"SALA_REUNIONES","capacidad":8,"minutosLimpieza":15}"""))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.title").value("Acceso denegado"));
+    }
+
+    @Test
+    void headNoSaltaLasReglasDeAdmin() throws Exception {
+        String usuario = tokenUsuario();
+
+        mvc.perform(head("/api/usuarios").header(AUTHORIZATION, usuario))
+                .andExpect(status().isForbidden());
+        mvc.perform(head("/api/reservas").header(AUTHORIZATION, usuario))
+                .andExpect(status().isForbidden());
     }
 
     @Test

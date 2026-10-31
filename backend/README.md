@@ -11,8 +11,11 @@ API REST de reservas de espacios de coworking (Spring Boot 3.5, Java 21, Postgre
 
 ```bash
 docker compose up -d                                   # PostgreSQL en localhost:5432
-JAVA_HOME=$(/usr/libexec/java_home -v 21) ./mvnw spring-boot:run
+SPRING_PROFILES_ACTIVE=local JAVA_HOME=$(/usr/libexec/java_home -v 21) ./mvnw spring-boot:run
 ```
+
+No hay perfil por defecto a propósito: sin `SPRING_PROFILES_ACTIVE` la app exige `JWT_SECRET` y no arranca
+con el secreto de desarrollo.
 
 - API: http://localhost:8080/api
 - Swagger: http://localhost:8080/swagger-ui.html

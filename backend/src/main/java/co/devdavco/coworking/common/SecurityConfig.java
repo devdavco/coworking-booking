@@ -45,8 +45,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/espacios").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/espacios/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/espacios/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/usuarios").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/reservas").hasRole("ADMIN")
+                        // HEAD también llega a los @GetMapping: hay que protegerlo igual que GET.
+                        .requestMatchers(HttpMethod.GET, "/api/usuarios", "/api/reservas").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.HEAD, "/api/usuarios", "/api/reservas").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .exceptionHandling(errores -> errores
                         .authenticationEntryPoint(problemas)
