@@ -17,3 +17,6 @@ app:
     secret: dev-secret-solo-para-local-no-usar-en-prod-0123456789
   cors:
     origins: http://localhost:4200
+  admin:
+    email: admin@coworking.local
+    password: admin12345

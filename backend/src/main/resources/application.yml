@@ -28,3 +28,6 @@ app:
     expiracion: 1h
   cors:
     origins: ${APP_CORS_ORIGINS:}
+  admin:
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
