@@ -1,7 +1,16 @@
 package co.devdavco.coworking.common;
 
 import co.devdavco.coworking.IntegrationTest;
+import co.devdavco.coworking.usuario.Rol;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.JwsHeader;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+
+import java.time.Instant;
 
 import static org.springframework.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN;
 import static org.springframework.http.HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD;
@@ -34,6 +43,26 @@ class SeguridadTest extends IntegrationTest {
         String falsificado = token.substring(0, token.lastIndexOf('.') + 1) + "firmaFalsa";
 
         mvc.perform(get("/api/espacios").header(AUTHORIZATION, falsificado))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Autowired
+    JwtEncoder jwtEncoder;
+
+    @Test
+    void unTokenDeOtroEmisorDevuelve401() throws Exception {
+        crearUsuario("usuario@test.com", Rol.USUARIO);
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("otro-sistema")
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plusSeconds(600))
+                .subject("1")
+                .claim("rol", "ADMIN")
+                .build();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(JwsHeader.with(MacAlgorithm.HS256).build(), claims))
+                .getTokenValue();
+
+        mvc.perform(get("/api/espacios").header(AUTHORIZATION, "Bearer " + token))
                 .andExpect(status().isUnauthorized());
     }
 

@@ -1,6 +1,7 @@
 package co.devdavco.coworking.common;
 
 import co.devdavco.coworking.auth.JwtProperties;
+import co.devdavco.coworking.auth.JwtService;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -81,7 +83,9 @@ public class SecurityConfig {
 
     @Bean
     JwtDecoder jwtDecoder(SecretKey jwtKey) {
-        return NimbusJwtDecoder.withSecretKey(jwtKey).macAlgorithm(MacAlgorithm.HS256).build();
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(jwtKey).macAlgorithm(MacAlgorithm.HS256).build();
+        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(JwtService.EMISOR));
+        return decoder;
     }
 
     @Bean

@@ -15,6 +15,9 @@ import java.time.Instant;
 @Service
 public class JwtService {
 
+    /** Emisor de los tokens; SecurityConfig rechaza cualquier token con otro "iss". */
+    public static final String EMISOR = "coworking-booking";
+
     private final JwtEncoder encoder;
     private final JwtProperties propiedades;
     private final Clock clock;
@@ -29,7 +32,7 @@ public class JwtService {
         Instant ahora = clock.instant();
         Instant expira = ahora.plus(propiedades.expiracion());
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("coworking-booking")
+                .issuer(EMISOR)
                 .issuedAt(ahora)
                 .expiresAt(expira)
                 .subject(usuario.getId().toString())
