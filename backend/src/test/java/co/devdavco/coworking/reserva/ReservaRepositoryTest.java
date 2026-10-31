@@ -49,6 +49,15 @@ class ReservaRepositoryTest extends IntegrationTest {
     }
 
     @Test
+    void laBaseAceptaUnaReservaQueEmpiezaJustoAlTerminarLaLimpieza() {
+        reservas.saveAndFlush(new Reserva(ana, sala, NUEVE, DIEZ, DIEZ_Y_CUARTO, NUEVE));
+
+        reservas.saveAndFlush(new Reserva(ana, sala, DIEZ_Y_CUARTO, ONCE, ONCE.plusSeconds(900), NUEVE));
+
+        assertThat(reservas.count()).isEqualTo(2);
+    }
+
+    @Test
     void lasReservasCanceladasNoBloquean() {
         Reserva cancelada = new Reserva(ana, sala, NUEVE, DIEZ, DIEZ_Y_CUARTO, NUEVE);
         cancelada.cancelar();
