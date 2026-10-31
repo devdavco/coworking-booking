@@ -1,0 +1,81 @@
+<h1>Espacios</h1>
+
+<div class="tarjeta">
+  <h2>{{ editando() ? 'Editar "' + editando()!.nombre + '"' : 'Nuevo espacio' }}</h2>
+  @if (error()) {
+    <p class="error">{{ error() }}</p>
+  }
+  <form (ngSubmit)="guardar()" class="campos">
+    <label>
+      Nombre
+      <input name="nombre" [(ngModel)]="formulario.nombre" required />
+      @if (errores()['nombre']) {
+        <span class="error">{{ errores()['nombre'] }}</span>
+      }
+    </label>
+    <label>
+      Tipo
+      <select name="tipo" [(ngModel)]="formulario.tipo">
+        @for (tipo of tipos; track tipo) {
+          <option [value]="tipo">{{ nombreTipo[tipo] }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Capacidad
+      <input type="number" name="capacidad" min="1" [(ngModel)]="formulario.capacidad" required />
+      @if (errores()['capacidad']) {
+        <span class="error">{{ errores()['capacidad'] }}</span>
+      }
+    </label>
+    <label>
+      Minutos de limpieza
+      <input type="number" name="minutosLimpieza" min="0" [(ngModel)]="formulario.minutosLimpieza" required />
+      @if (errores()['minutosLimpieza']) {
+        <span class="error">{{ errores()['minutosLimpieza'] }}</span>
+      }
+    </label>
+    <div class="acciones">
+      <button type="submit" [disabled]="guardando()">{{ editando() ? 'Guardar' : 'Crear' }}</button>
+      @if (editando()) {
+        <button type="button" class="secundario" (click)="cancelarEdicion()">Cancelar edición</button>
+      }
+    </div>
+  </form>
+</div>
+
+<table class="lista">
+  <thead>
+    <tr>
+      <th>Nombre</th>
+      <th>Tipo</th>
+      <th>Capacidad</th>
+      <th>Limpieza</th>
+      <th>Estado</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    @for (espacio of espacios(); track espacio.id) {
+      <tr [class.suave]="!espacio.activo">
+        <td>{{ espacio.nombre }}</td>
+        <td>{{ nombreTipo[espacio.tipo] }}</td>
+        <td>{{ espacio.capacidad }}</td>
+        <td>{{ espacio.minutosLimpieza }} min</td>
+        <td>{{ espacio.activo ? 'Activo' : 'Inactivo' }}</td>
+        <td class="acciones">
+          <button class="secundario" (click)="editar(espacio)">Editar</button>
+          @if (espacio.activo) {
+            <button class="secundario" (click)="desactivar(espacio)">Desactivar</button>
+          } @else {
+            <button class="secundario" (click)="reactivar(espacio)">Reactivar</button>
+          }
+        </td>
+      </tr>
+    } @empty {
+      <tr>
+        <td colspan="6" class="suave">Todavía no hay espacios</td>
+      </tr>
+    }
+  </tbody>
+</table>
